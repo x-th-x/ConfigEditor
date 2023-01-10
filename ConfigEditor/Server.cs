@@ -1,9 +1,27 @@
-﻿namespace ConfigEditor
+﻿using System.ComponentModel;
+
+namespace ConfigEditor
 {
-    public class Server
+    class Server : Machine
     {
-        public String Name = "";
-        public String Path = "";
-        public String ConnectionString = "";
+        private string path, connectionString;
+
+        public Server(string path, string connectionString)
+        {
+            this.path = path;
+            this.connectionString = connectionString;
+        }
+
+        public override string Path
+        {
+            get
+            { return this.path; }
+        }
+
+        public string ConnectionString
+        {
+            get
+            { return this.connectionString; }
+        }
     }
 }

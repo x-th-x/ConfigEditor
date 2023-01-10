@@ -1,36 +1,55 @@
-﻿using System.Xml;
+﻿using System.ComponentModel;
+using System.Xml;
 
 namespace ConfigEditor
 {
-    public class XmlFunctions
+    public static class XmlFunctions
     {
         private static String Path = $"{Directory.GetCurrentDirectory()}//config.xml";
 
-        public List<Server> OpenConfigData()
+        public static BindingList<Machine> OpenConfigData(string path)
         {
-            if (!File.Exists(Path))
+            //if (path != null && !File.Exists(path))
+            //{
+            //    WriteXml(true);
+            //}
+
+
+            var machines = new BindingList<Machine>();
+
+            var servers = ReadServers(path);
+            foreach (var server in servers)
             {
-                WriteXml(true);
+                machines.Add(server);
             }
 
-            return ReadServer();
+            var clients = ReadClients(path);
+            foreach (var client in clients)
+            {
+                machines.Add(client);
+            }
+
+            return machines;
         }
 
-        private List<Server> ReadServer()
+        private static List<Server> ReadServers(string path)
         {
             var serverList = new List<Server>();
             XmlDocument document = new XmlDocument();
-            document.PreserveWhitespace = true;
-            document.Load(Path);
+            document.PreserveWhitespace = false;
+            document.Load(path);
             
 
-            var nodes = document.SelectNodes("Server");
+            var nodes = document.SelectNodes("Config/Servers/Server");
 
-            foreach (var node in nodes)
+            foreach (XmlElement node in nodes)
             {
-                var server = new Server();
-                //TODO SetProperties
-                server.Name = ""; //...
+        
+                var server = new Server(node.GetAttribute("path"), 
+                    node.ChildNodes.OfType<XmlElement>()
+                    .Where(e => e.Name == "ConnectionString")?
+                    .FirstOrDefault()?.InnerText ?? "");
+                              
 
                 serverList.Add(server);
             }
@@ -40,31 +59,34 @@ namespace ConfigEditor
 
 
 
-        private List<Server> ReadClients()
+
+        private static List<Client> ReadClients(string path)
         {
-            var serverList = new List<Server>();
+            var clientList = new List<Client>();
             XmlDocument document = new XmlDocument();
-            document.PreserveWhitespace = true;
-            document.Load(Path);
+            document.PreserveWhitespace = false;
+            document.Load(path);
 
 
-            var nodes = document.SelectNodes("Clients");
+            var nodes = document.SelectNodes("Config/Clients/Client");
 
-            foreach (var node in nodes)
+            foreach (XmlElement node in nodes)
             {
-                var server = new Server();
-                //TODO SetProperties
-                server.Name = ""; //...
+                var isTsClient = node.ChildNodes.OfType<XmlElement>()
+                    .Where(e => e.Name == "TSClient")?
+                    .FirstOrDefault()?.InnerText ?? "´false";
 
-                serverList.Add(server);
+                var client = new Client(node.GetAttribute("path"), Boolean.Parse(isTsClient));
+
+                clientList.Add(client);
             }
 
-            return serverList;
+            return clientList;
         }
 
 
 
-        public void WriteXml(bool empty)
+        public static void WriteXml(bool empty)
         {
             XmlWriterSettings settings = new XmlWriterSettings();
             settings.Indent = true;
